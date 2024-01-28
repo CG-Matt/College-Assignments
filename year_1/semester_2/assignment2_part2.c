@@ -13,4 +13,6 @@ int main(void)
 
     // Display value to user
     printf("The sum of the even numbers is: %i\n", sum);
+    
+    return 0;
 }

@@ -31,4 +31,6 @@ int main(void)
 
     // Show average to user
     printf("The average of the provided numbers is: %.2f\n", sum);
+    
+    return 0;
 }
