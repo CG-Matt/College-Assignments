@@ -6,7 +6,7 @@
 void DisplayInstructions()
 {
     puts("This program takes the sales for each month for 2 years from the user");
-    puts("It then caculates during which months the sales were higher than the previous year.");
+    puts("It then calculates during which months the sales were higher than the previous year.");
     puts("Finally, it shows the user for how many months sales were higher in year 2 compared to year 1.");
 }
 
