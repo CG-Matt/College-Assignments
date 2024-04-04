@@ -93,8 +93,13 @@ void setup()
     timer.previous      = timer.start;
     timer.last_transmit = timer.start;
 
+// This preprocessor command will change what mode the arduino starts
+#ifdef FINAL_DAY_TRANSMIT
     prev_mode = MODE_NULL;  // Set the previous mode to a know value
     mode      = PRE_LAUNCH; // Set the current mode to a know value
+#else
+    mode      = DESCENDING; // Sets the current node to a know value
+#endif
 
     for(size_t i = 0; i < WINDOW_SIZE; i++) // Initialise the moving window with values from the accelerometer
     {
@@ -159,6 +164,9 @@ void setup()
     */
     for(int i = 0; i < 10; i++)
     {
+        readFromAccelerometer(&accel_data);
+        smoothAccelReading(&window, &accel_data, &accel_data);
+        window.index = (window.index + 1) % WINDOW_SIZE; // Increment the index, and wrap to 0 if it exceeds the window size
         baseline_acceleration_magnitude += calcVectorMagnitude(&accel_data);
     }
     baseline_acceleration_magnitude /= 10.0f;
@@ -181,6 +189,8 @@ void detectMode()
     // In the event that mode switching fail always switch to LANDED after 10s from launch
     if(mode == ASCENDING && timer.now - timer.launch > 10000)
     {
+        prev_mode     = ASCENDING;
+        mode          = LANDED;
         timer.descent = timer.now;
         timer.land    = timer.now;
     }
@@ -188,8 +198,8 @@ void detectMode()
     // Switch from PRE_LAUNCH to ASCENDING
     if(mode == PRE_LAUNCH)
     {
-        // Check if the acceleration in the Y direction is greater than -10
-        if(accel_data.y < -10) return;
+        // Check if the acceleration in the Y direction is greater than the threshold
+        if(accel_data.y < (0 - baseline_acceleration_magnitude - STATIC_ACCEL_OFFSET)) return;
 
         // If yes then we are ascending
         prev_mode    = PRE_LAUNCH;
@@ -310,6 +320,7 @@ inline void TransmitSummary(String& data_to_send)
 
     TransmitStatTrackSummary(data_to_send, st_altitude, "- Altitude (m):\n");
     data_to_send = data_to_send + "\tRel Max:\t" + (st_altitude.max - launch_altitude) + "\n";
+    transmit(data_to_send);
 
     TransmitStatTrackSummary(data_to_send, st_pressure, "- Pressure (hPa):\n");
 
@@ -358,6 +369,7 @@ void loop()
     // Calculate Force
     calcForce(&force, &accel_data);
 
+#ifdef FINAL_DAY_TRANSMIT // This code will only be compiled and ran if the target test is the final day test
     // Velocity and will be zero if we are pre launch or landed
     if(mode == PRE_LAUNCH || mode == LANDED)
     {
@@ -367,6 +379,7 @@ void loop()
 
     // 3. Detect Mode i.e. launch, ascending, descending, landed etc.
     detectMode();
+#endif
 
     // 4. TRACK MIN, MAX, AVG VALUES for Altitude, Force, Velocity, etc. Only if ascending or descending
     if(mode == ASCENDING || mode == DESCENDING)
@@ -384,6 +397,12 @@ void loop()
     // Initialise transmission string
     String data_to_send = "";
 
+#ifndef FINAL_DAY_TRANSMIT
+    // This code will only get compiled and executed if we are going for the drop test config
+    MakeTransmitString(&data_to_send, mode);
+    transmit(data_to_send);
+#else
+    // This code will only get compiled and executed if we are going for the launch test config
     // Depending on mode - run certain calculations / transmit particular data at different intervals
     switch(mode)
     {
@@ -399,11 +418,7 @@ void loop()
             MakeTransmitString(&data_to_send, mode);
 
             // Transmit data
-#ifdef FINAL_DAY_TRANSMIT
-            Serial.print(data_to_send);
-#else
             transmit(data_to_send);
-#endif
             // Record PRE_LAUNCH transmission time
             timer.last_transmit = timer.now;
             break;
@@ -414,11 +429,7 @@ void loop()
             // Package data into a string
             MakeTransmitString(&data_to_send, mode);
             // Transmit data
-#ifdef FINAL_DAY_TRANSMIT
-            Serial.print(data_to_send);
-#else
             transmit(data_to_send);
-#endif
             break;
 
         case LANDED:
@@ -432,4 +443,5 @@ void loop()
             Serial.println("ARDUINO IN UNEXPECTED MODE!");
             break;
     }
+#endif
 }
