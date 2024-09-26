@@ -1,0 +1,123 @@
+---
+title: "Assignment 1: Data visualisation"
+author: "Mateusz B"
+output: word_document
+---
+
+
+## Question of Interest
+
+What are the most important factors that determine the price of an Air BnB?
+
+
+### Load the required library
+
+The only library you need to load is 'tidyverse'.  If you are running this code on your own computer you will have to install it, if you are running this in a lab it's already installed.
+
+Load up the library as follows:   
+
+```{r}
+
+library(tidyverse)
+library(ggplot2)
+
+```
+
+The data are on Canvas, download the `airbnb.csv` file and put it in the same folder that this `Assignment 1.Rmd` file is saved. The data will then load using
+
+```{r}
+
+airbnb <- read.csv("airbnb.csv")
+
+```
+
+[If you have any difficulty loading the data, you can Import manually using RStudio, click on File > Import Dataset > From Text (readr) and find the file. You will also be given the code required to read this in, which you can put above to knit your file]
+
+## Univariate summary
+
+The key variable of interest `price` (representing the price per night in euros) is a quantitative variable.  
+
+1. Describe the nightly price using the mean, median, and standard deviation.
+
+```{r}
+  summarise(airbnb, mean=mean(price), median=median(price), sd=sd(price), q1 = quantile(price, prob=.25, type=1), q3 = quantile(price, prob=.75, type=1))
+```
+
+2. Describe the nightly price using a boxplot
+
+```{r}
+
+airbnb |> ggplot(aes(x=price)) + geom_boxplot()
+
+```
+
+
+3. Interpret the summary statistics and plot
+
+The data is right skewed, this is because the mean is significantly greater than the median.
+This also shows us that the half of the airbnbs charge between 54 - 135 euros per night.
+
+
+## Bivariate summaries
+
+Time to create some bivariate plots and tables, where we investigate the relationship between several variables and price.  
+
+4. Create a boxplot of price by number of bedrooms
+
+```{r}
+airbnb |> ggplot(aes(x = bedrooms, y = price, fill = bedrooms)) + geom_boxplot()
+```
+
+5. Calculate summary statistics of price (mean, median, standard deviation) separately for each number of bedrooms
+
+```{r}
+airbnb |> group_by(bedrooms) |> summarise(mean = mean(price), median = median(price), sd = sd(price))
+```
+
+6. Produce a scatterplot of `price` by `number_of_reviews`
+
+```{r}
+airbnb |> ggplot(aes(x = number_of_reviews, y = price)) + geom_point()
+```
+
+
+7. Interpret your numerical and graphical summaries of price by bedroom and number of reviews
+
+There is a general negative correlation between the number of reviews and the price of the airbnb.
+This is however expected as you can imaging that there would be less people renting expensive airbnbs if there are cheaper options available in the same area.
+
+## Your investigation
+
+8. Now it's up to you! Produce at least two more plots and two more tables to investigate other variables in the dataset, making sure to add your interpretation
+
+```{r}
+airbnb |> group_by(room_type) |> summarise(mean = mean(price), median = median(price), sd = sd(price))
+```
+```{r}
+airbnb |> ggplot(aes(x = room_type, y = price, fill = room_type)) + geom_boxplot()
+```
+
+From the above data we can infer that on average it is a bit over twice as expensive to rent an entire house compared to renting a private room, and it is not a large amount cheaper to rent a shared room over a private room.
+
+We can also see that all of this data is right skewed, however the price of entire houses / apartments is the most varied while the other room types stay fairly consistent.
+I feel that this is due to the fact that a house / apartment can come with a varying amount of rooms leading to this kind of spread in price
+
+```{r}
+airbnb |> ggplot(aes(x = review_scores_rating, y = number_of_reviews)) + geom_point()
+```
+
+From this graph I conclude that airbnb customers are more likely to leave a review if they had a positive experience.
+The graph shows a properties with low review scores get very little reviews, and there is a general trend that as the rating increases so does the number of reviews
+
+```{r}
+airbnb |> group_by(room_type) |> summarise(mean = mean(accommodates), median = median(accommodates), sd = sd(accommodates))
+```
+From the above table we can observe that the average home / apartment can house about 4 people, the average private room can house about 2 people and the average shared room can house about 1 person.
+I feel that the last statement is a bit confusing, however I believe that this is due to the way the data is presented to us in this sample. A more appropriate statement would be to say that the average listing for a shared room offers only 1 place in the room.
+
+# Conclusion
+
+9. Write a short conclusion to say which variable(s) seem to be the most important factors that determine the price of an Air BnB
+
+The two most important variables that influence the price of the airbnb appear to be the number of bedrooms and the type of room.
+This research shows that renting a house is significantly more expensive than renting a room(private or shared) as well as a general increase in price as the number of bedrooms in the property increases which are both to be expected.
